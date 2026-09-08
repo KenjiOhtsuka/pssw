@@ -35,3 +35,10 @@ Start-PSSWTimer -Duration 5m, 30s
 Start-PSSWTimer -Duration 1m -Repeat 3
 Start-PSSWTimer -Duration 10s -Repeat -1 -Mute
 ```
+
+Timer durations accept hours (`h`), minutes (`m`), seconds (`s`), or unitless
+values interpreted as seconds. Multiple values are added together, so
+`-Duration 1m, 30s` runs for 90 seconds. `-Repeat` accepts a positive cycle
+count or `-1` for infinite repetition; `-Mute` suppresses only the audible
+completion alert, while the "Time's up!" message still prints. Press `s` to
+pause/resume or `q` to cancel cleanly.

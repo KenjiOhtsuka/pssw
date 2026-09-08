@@ -168,45 +168,72 @@ function Start-PSSWTimer {
 
     $totalSeconds = ConvertFrom-PSSWDuration -Duration $Duration
     $cycle = 0
-    while ($Repeat -eq -1 -or $cycle -lt $Repeat) {
-        $cycle++
-        Write-Host ('--- Timer Cycle #{0} ---' -f $cycle)
-        Write-Host "Press 's' to pause/resume, or 'q' to quit."
-        $remaining = $totalSeconds
-        $running = $true
-        $clock = [Diagnostics.Stopwatch]::StartNew()
-        $startRemaining = $remaining
-
-        while ($remaining -gt 0) {
-            if ($running) {
-                $remaining = [math]::Max(0, $startRemaining - $clock.Elapsed.TotalSeconds)
-            }
-            Write-PSSWTimeLine -Seconds $remaining -Precision $Precision
-            $key = Read-PSSWKey
-            if ($key -eq 'q') {
-                Write-Host 'Timer canceled by user.'
-                return
-            }
-            if ($key -eq 's') {
-                if ($running) {
-                    $remaining = [math]::Max(0, $startRemaining - $clock.Elapsed.TotalSeconds)
-                    $running = $false
+    try {
+        while ($Repeat -eq -1 -or $cycle -lt $Repeat) {
+            $cycle++
+            Write-Host ('--- Timer Cycle #{0} ---' -f $cycle)
+            Write-Host "Press 's' to pause/resume, or 'q' to quit."
+            $remaining = $totalSeconds
+            $running = $true
+            $clock = [Diagnostics.Stopwatch]::StartNew()
+            $baseRemaining = $remaining
+            try {
+                while ($remaining -gt 0) {
+                    if ($running) {
+                        $remaining = [math]::Max(0, $baseRemaining - (Get-PSSWTimerElapsed -Clock $clock))
+                    }
+                    Write-PSSWTimeLine -Seconds $remaining -Precision $Precision
+                    $key = Read-PSSWKey
+                    if ($key -eq 'q') {
+                        Write-Host 'Timer canceled by user.'
+                        return
+                    }
+                    if ($key -eq 's') {
+                        if ($running) {
+                            $remaining = [math]::Max(0, $baseRemaining - (Get-PSSWTimerElapsed -Clock $clock))
+                            $running = $false
+                        }
+                        else {
+                            $clock = [Diagnostics.Stopwatch]::StartNew()
+                            $baseRemaining = $remaining
+                            $running = $true
+                        }
+                    }
+                    Start-Sleep -Milliseconds $(if ($Precision -gt 2) { 10 } else { 50 })
                 }
-                else {
-                    $clock = [Diagnostics.Stopwatch]::StartNew()
-                    $startRemaining = $remaining
-                    $running = $true
-                }
+                Write-PSSWTimeLine -Seconds 0 -Precision $Precision
+                Invoke-PSSWTimerNotification -Mute:$Mute
+                Write-Host "Time's up!"
             }
-            Start-Sleep -Milliseconds $(if ($Precision -gt 2) { 10 } else { 50 })
-        }
+            finally {
+                $clock.Stop()
+            }
 
-        Write-PSSWTimeLine -Seconds 0 -Precision $Precision
-        if (-not $Mute) {
-            try { [Console]::Beep() } catch { [Console]::Write([char]7) }
+            if ($Repeat -eq -1 -or $cycle -lt $Repeat) {
+                Start-Sleep -Seconds 1
+            }
         }
-        Write-Host "Time's up!"
-        if ($Repeat -eq -1 -or $cycle -lt $Repeat) { Start-Sleep -Seconds 1 }
+    }
+    finally {
+        Write-Host ''
+    }
+}
+
+function Get-PSSWTimerElapsed {
+    param(
+        [Diagnostics.Stopwatch] $Clock
+    )
+
+    return $Clock.Elapsed.TotalSeconds
+}
+
+function Invoke-PSSWTimerNotification {
+    param(
+        [switch] $Mute
+    )
+
+    if (-not $Mute) {
+        try { [Console]::Beep() } catch { [Console]::Write([char]7) }
     }
 }
 

@@ -45,6 +45,56 @@ Describe 'PSSW module' {
         { Start-PSSWTimer -Duration 1s -Repeat -2 } | Should -Throw
     }
 
+    It 'runs the requested number of timer cycles' {
+        InModuleScope PSSW {
+            Mock Get-PSSWTimerElapsed { 1.0 }
+            Mock Read-PSSWKey { $null }
+            Mock Start-Sleep {}
+            Mock Invoke-PSSWTimerNotification {}
+
+            { Start-PSSWTimer -Duration 1s -Repeat 2 -Mute } | Should -Not -Throw
+            Should -Invoke Invoke-PSSWTimerNotification -Exactly 2
+            Should -Invoke Read-PSSWKey -Exactly 2
+        }
+    }
+
+    It 'supports pause and resume without counting paused time' {
+        InModuleScope PSSW {
+            $elapsedReads = [Collections.Generic.Queue[double]]::new()
+            $elapsedReads.Enqueue(0.25)
+            $elapsedReads.Enqueue(0.25)
+            $elapsedReads.Enqueue(1.0)
+            Mock Get-PSSWTimerElapsed { $elapsedReads.Dequeue() }
+            $keys = [Collections.Generic.Queue[string]]::new()
+            foreach ($key in @('s', 's', 'q')) { $keys.Enqueue($key) }
+            Mock Read-PSSWKey {
+                if ($keys.Count -gt 0) { return $keys.Dequeue() }
+                return 'q'
+            }
+            Mock Start-Sleep {}
+
+            $output = & { Start-PSSWTimer -Duration 1s -Precision 0 -Mute } 6>&1 |
+                ForEach-Object { $_.ToString() }
+
+            ($output -join "`n") | Should -Match 'Timer canceled by user'
+            Should -Invoke Get-PSSWTimerElapsed -Exactly 3
+            Should -Invoke Read-PSSWKey -Exactly 3
+        }
+    }
+
+    It 'does not notify when muted' {
+        InModuleScope PSSW {
+            Mock Get-PSSWTimerElapsed { 1.0 }
+            Mock Read-PSSWKey { $null }
+            Mock Start-Sleep {}
+            Mock Invoke-PSSWTimerNotification {}
+
+            Start-PSSWTimer -Duration 1s -Mute
+
+            Should -Invoke Invoke-PSSWTimerNotification -ParameterFilter { $Mute } -Exactly 1
+        }
+    }
+
     It 'quits cleanly without interactive input' {
         InModuleScope PSSW {
             $elapsedReads = [Collections.Generic.Queue[double]]::new()

@@ -127,6 +127,10 @@ function Start-PSSWStopwatch {
         }
     }
     finally {
+        if ($running) {
+            $elapsed = $baseElapsed + $clock.Elapsed.TotalSeconds
+        }
+        $clock.Stop()
         Write-Host ''
         if ($elapsed -gt 0 -or $laps.Count -gt 0) {
             Write-Host '--- Finished ---'

@@ -44,4 +44,44 @@ Describe 'PSSW module' {
         { Start-PSSWTimer -Duration 1s -Repeat 0 } | Should -Throw
         { Start-PSSWTimer -Duration 1s -Repeat -2 } | Should -Throw
     }
+
+    It 'quits cleanly without interactive input' {
+        InModuleScope PSSW {
+            Mock Read-PSSWKey { 'q' }
+            Mock Start-Sleep {}
+
+            { Start-PSSWStopwatch } | Should -Not -Throw
+            Should -Invoke Read-PSSWKey -Exactly 1
+        }
+    }
+
+    It 'supports pause, lap, reset, and resume controls' {
+        InModuleScope PSSW {
+            $keys = [Collections.Generic.Queue[string]]::new()
+            foreach ($key in @('l', 's', 's', 'l', 'q')) {
+                $keys.Enqueue($key)
+            }
+
+            Mock Read-PSSWKey {
+                if ($keys.Count -gt 0) {
+                    return $keys.Dequeue()
+                }
+                return 'q'
+            }
+            Mock Start-Sleep {}
+
+            $output = & { Start-PSSWStopwatch -Precision 0 } 6>&1 |
+                ForEach-Object { $_.ToString() }
+
+            ($output -join "`n") | Should -Match '--- Finished ---'
+            ($output -join "`n") | Should -Match 'Total Time:'
+            ($output -join "`n") | Should -Match 'Lap #01'
+            Should -Invoke Read-PSSWKey -Exactly 5
+        }
+    }
+
+    It 'validates stopwatch precision' {
+        { Start-PSSWStopwatch -Precision -1 } | Should -Throw
+        { Start-PSSWStopwatch -Precision 16 } | Should -Throw
+    }
 }

@@ -42,4 +42,27 @@ jobs:
         shell: pwsh
         run: |
           $ErrorActionPreference = 'Stop'
-          Publish-Module -Path . -Repository PSGallery -NuGetApiKey 'validation-only' -WhatIf
+          New-Item -ItemType Directory -Path ./PSSW -Force | Out-Null
+          Copy-Item ./PSSW.psd1, ./PSSW.psm1 -Destination ./PSSW
+          $packageManifest = Test-ModuleManifest ./PSSW/PSSW.psd1
+          if ($packageManifest.Name -ne 'PSSW') {
+            throw "Unexpected package module name: $($packageManifest.Name)"
+          }
+          if ($packageManifest.Version -lt [version]'0.1.0') {
+            throw "Unexpected package version: $($packageManifest.Version)"
+          }
+          if ($packageManifest.ExportedFunctions.Keys -notcontains 'Start-PSSWStopwatch') {
+            throw 'The package does not export Start-PSSWStopwatch.'
+          }
+          if ($packageManifest.ExportedFunctions.Keys -notcontains 'Start-PSSWTimer') {
+            throw 'The package does not export Start-PSSWTimer.'
+          }
+          if ($packageManifest.PrivateData.PSData.ProjectUri -ne 'https://github.com/KenjiOhtsuka/pssw') {
+            throw 'The package ProjectUri metadata is missing or incorrect.'
+          }
+          if ($packageManifest.PrivateData.PSData.LicenseUri -notlike '*LICENSE') {
+            throw 'The package LicenseUri metadata is missing or incorrect.'
+          }
+          if ($packageManifest.PrivateData.PSData.Tags -notcontains 'PowerShell') {
+            throw 'The package PowerShell tag is missing.'
+          }

@@ -22,7 +22,7 @@ jobs:
       - name: Check out release tag
         uses: actions/checkout@v4
         with:
-          ref: ${{ inputs.tag }}
+          ref: refs/tags/${{ inputs.tag }}
 
       - name: Validate release inputs and manifest
         shell: pwsh
@@ -45,6 +45,12 @@ jobs:
           if ([string]::IsNullOrWhiteSpace($env:PSGALLERY_API_KEY)) {
             throw 'The PSGALLERY_API_KEY secret is required.'
           }
+          New-Item -ItemType Directory -Path ./PSSW -Force | Out-Null
+          Copy-Item ./PSSW.psd1, ./PSSW.psm1 -Destination ./PSSW
+          $stagedManifest = Test-ModuleManifest ./PSSW/PSSW.psd1
+          if ($stagedManifest.Name -ne 'PSSW') {
+            throw "Unexpected staged module name: $($stagedManifest.Name)"
+          }
 
       - name: Publish module
         shell: pwsh
@@ -52,4 +58,4 @@ jobs:
           PSGALLERY_API_KEY: ${{ secrets.PSGALLERY_API_KEY }}
         run: |
           $ErrorActionPreference = 'Stop'
-          Publish-Module -Path . -Repository PSGallery -NuGetApiKey $env:PSGALLERY_API_KEY
+          Publish-Module -Path ./PSSW -Repository PSGallery -NuGetApiKey $env:PSGALLERY_API_KEY

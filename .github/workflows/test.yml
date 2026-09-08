@@ -22,10 +22,47 @@ jobs:
       - name: Validate module import
         shell: pwsh
         run: |
-          Import-Module ./PSSW.psd1 -Force
-          if (-not (Get-Command Start-PSSWStopwatch -ErrorAction SilentlyContinue)) {
+          $manifest = Test-ModuleManifest ./PSSW.psd1
+          if ($manifest.Name -ne 'PSSW') { throw "Unexpected module name: $($manifest.Name)" }
+          if ($manifest.Version -lt [version]'0.1.0') { throw "Unexpected module version: $($manifest.Version)" }
+          if ($manifest.ExportedFunctions.Keys -notcontains 'Start-PSSWStopwatch') {
             throw 'Start-PSSWStopwatch was not exported.'
           }
-          if (-not (Get-Command Start-PSSWTimer -ErrorAction SilentlyContinue)) {
+          if ($manifest.ExportedFunctions.Keys -notcontains 'Start-PSSWTimer') {
             throw 'Start-PSSWTimer was not exported.'
+          }
+          Import-Module ./PSSW.psd1 -Force
+          if ((Get-Command Start-PSSWStopwatch).CommandType -ne 'Function') {
+            throw 'Start-PSSWStopwatch did not import as a function.'
+          }
+          if ((Get-Command Start-PSSWTimer).CommandType -ne 'Function') {
+            throw 'Start-PSSWTimer did not import as a function.'
+          }
+      - name: Validate Gallery package metadata
+        shell: pwsh
+        run: |
+          $ErrorActionPreference = 'Stop'
+          New-Item -ItemType Directory -Path ./PSSW -Force | Out-Null
+          Copy-Item ./PSSW.psd1, ./PSSW.psm1 -Destination ./PSSW
+          $packageManifest = Test-ModuleManifest ./PSSW/PSSW.psd1
+          if ($packageManifest.Name -ne 'PSSW') {
+            throw "Unexpected package module name: $($packageManifest.Name)"
+          }
+          if ($packageManifest.Version -lt [version]'0.1.0') {
+            throw "Unexpected package version: $($packageManifest.Version)"
+          }
+          if ($packageManifest.ExportedFunctions.Keys -notcontains 'Start-PSSWStopwatch') {
+            throw 'The package does not export Start-PSSWStopwatch.'
+          }
+          if ($packageManifest.ExportedFunctions.Keys -notcontains 'Start-PSSWTimer') {
+            throw 'The package does not export Start-PSSWTimer.'
+          }
+          if ($packageManifest.PrivateData.PSData.ProjectUri -ne 'https://github.com/KenjiOhtsuka/pssw') {
+            throw 'The package ProjectUri metadata is missing or incorrect.'
+          }
+          if ($packageManifest.PrivateData.PSData.LicenseUri -notlike '*LICENSE') {
+            throw 'The package LicenseUri metadata is missing or incorrect.'
+          }
+          if ($packageManifest.PrivateData.PSData.Tags -notcontains 'PowerShell') {
+            throw 'The package PowerShell tag is missing.'
           }

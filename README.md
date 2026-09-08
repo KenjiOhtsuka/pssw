@@ -10,7 +10,7 @@ The module is under development. The current implementation targets PowerShell
 Run the tests with Pester:
 
 ```powershell
-Install-Module Pester -RequiredVersion 3.4.0 -Scope CurrentUser
+Install-Module Pester -MinimumVersion 5.0.0 -Scope CurrentUser
 Invoke-Pester ./tests/PSSW.Tests.ps1
 ```
 

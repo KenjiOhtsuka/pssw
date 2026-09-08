@@ -86,7 +86,7 @@ function Start-PSSWStopwatch {
     try {
         while ($true) {
             if ($running) {
-                $elapsed = $baseElapsed + $clock.Elapsed.TotalSeconds
+                $elapsed = $baseElapsed + (Get-PSSWStopwatchElapsed -Clock $clock)
             }
             Write-PSSWTimeLine -Seconds $elapsed -Precision $Precision
 
@@ -96,7 +96,7 @@ function Start-PSSWStopwatch {
             }
             if ($key -eq 's') {
                 if ($running) {
-                    $elapsed = $baseElapsed + $clock.Elapsed.TotalSeconds
+                    $elapsed = $baseElapsed + (Get-PSSWStopwatchElapsed -Clock $clock)
                     $running = $false
                 }
                 else {
@@ -128,7 +128,7 @@ function Start-PSSWStopwatch {
     }
     finally {
         if ($running) {
-            $elapsed = $baseElapsed + $clock.Elapsed.TotalSeconds
+            $elapsed = $baseElapsed + (Get-PSSWStopwatchElapsed -Clock $clock)
         }
         $clock.Stop()
         Write-Host ''
@@ -138,6 +138,14 @@ function Start-PSSWStopwatch {
             foreach ($lap in $laps) { Write-Host $lap }
         }
     }
+}
+
+function Get-PSSWStopwatchElapsed {
+    param(
+        [Diagnostics.Stopwatch] $Clock
+    )
+
+    return $Clock.Elapsed.TotalSeconds
 }
 
 function Start-PSSWTimer {

@@ -142,7 +142,31 @@ Describe 'PSSW module' {
             ($output -join "`n") | Should -Match 'Total Time:'
             ($output -join "`n") | Should -Not -Match 'Lap #02'
             (($output | Select-String 'Lap #01').Count) | Should -Be 4
+            (($output | Where-Object { $_ -eq '' }).Count) | Should -Be 3
             Should -Invoke Read-PSSWKey -Exactly 6
+        }
+    }
+
+    It 'prints the final timer value before the completion message' {
+        InModuleScope PSSW {
+            Mock Get-PSSWTimerElapsed { 1.0 }
+            Mock Read-PSSWKey { $null }
+            Mock Start-Sleep {}
+            Mock Invoke-PSSWTimerNotification {}
+
+            $output = @(& { Start-PSSWTimer -Duration 1s -Mute } 6>&1 |
+                ForEach-Object { $_.ToString() }
+            )
+
+            $zeroIndex = -1
+            for ($index = 0; $index -lt $output.Count; $index++) {
+                if ($output[$index] -match '00 h 00 m 00') {
+                    $zeroIndex = $index
+                }
+            }
+            $zeroIndex | Should -BeGreaterThan -1
+            $output[$zeroIndex + 1] | Should -Be ''
+            $output[$zeroIndex + 2] | Should -Be "Time's up!"
         }
     }
 

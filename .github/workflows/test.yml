@@ -1,0 +1,31 @@
+name: Test PSSW
+
+on:
+  push:
+  pull_request:
+
+jobs:
+  test:
+    strategy:
+      matrix:
+        os: [windows-latest, ubuntu-latest, macos-latest]
+    runs-on: ${{ matrix.os }}
+    steps:
+      - uses: actions/checkout@v4
+      - name: Install Pester
+        shell: pwsh
+        run: |
+          Install-Module Pester -MinimumVersion 5.0.0 -Scope CurrentUser -Force -SkipPublisherCheck
+      - name: Run tests
+        shell: pwsh
+        run: Invoke-Pester ./tests/PSSW.Tests.ps1
+      - name: Validate module import
+        shell: pwsh
+        run: |
+          Import-Module ./PSSW.psd1 -Force
+          if (-not (Get-Command Start-PSSWStopwatch -ErrorAction SilentlyContinue)) {
+            throw 'Start-PSSWStopwatch was not exported.'
+          }
+          if (-not (Get-Command Start-PSSWTimer -ErrorAction SilentlyContinue)) {
+            throw 'Start-PSSWTimer was not exported.'
+          }

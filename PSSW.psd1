@@ -19,6 +19,7 @@
             Tags       = @('PowerShell', 'stopwatch', 'timer', 'productivity')
             LicenseUri = 'https://github.com/KenjiOhtsuka/pssw/blob/main/LICENSE'
             ProjectUri = 'https://github.com/KenjiOhtsuka/pssw'
+            ReleaseNotes = 'Initial PowerShell stopwatch and countdown timer release.'
         }
     }
 }

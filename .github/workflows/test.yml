@@ -22,10 +22,24 @@ jobs:
       - name: Validate module import
         shell: pwsh
         run: |
-          Import-Module ./PSSW.psd1 -Force
-          if (-not (Get-Command Start-PSSWStopwatch -ErrorAction SilentlyContinue)) {
+          $manifest = Test-ModuleManifest ./PSSW.psd1
+          if ($manifest.Name -ne 'PSSW') { throw "Unexpected module name: $($manifest.Name)" }
+          if ($manifest.Version -lt [version]'0.1.0') { throw "Unexpected module version: $($manifest.Version)" }
+          if ($manifest.ExportedFunctions.Keys -notcontains 'Start-PSSWStopwatch') {
             throw 'Start-PSSWStopwatch was not exported.'
           }
-          if (-not (Get-Command Start-PSSWTimer -ErrorAction SilentlyContinue)) {
+          if ($manifest.ExportedFunctions.Keys -notcontains 'Start-PSSWTimer') {
             throw 'Start-PSSWTimer was not exported.'
           }
+          Import-Module ./PSSW.psd1 -Force
+          if ((Get-Command Start-PSSWStopwatch).CommandType -ne 'Function') {
+            throw 'Start-PSSWStopwatch did not import as a function.'
+          }
+          if ((Get-Command Start-PSSWTimer).CommandType -ne 'Function') {
+            throw 'Start-PSSWTimer did not import as a function.'
+          }
+      - name: Validate Gallery package metadata
+        shell: pwsh
+        run: |
+          $ErrorActionPreference = 'Stop'
+          Publish-Module -Path . -Repository PSGallery -NuGetApiKey 'validation-only' -WhatIf

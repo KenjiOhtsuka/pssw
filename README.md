@@ -2,8 +2,33 @@
 
 PSSW is a PowerShell stopwatch and countdown timer module.
 
-The module targets PowerShell 5.1 and PowerShell 7+ on Windows, macOS, and
-Linux.
+## Requirements and support
+
+- Windows PowerShell 5.1 on Windows
+- PowerShell 7.0 or later on Windows, macOS, and Linux
+- An interactive terminal for the stopwatch and timer controls
+
+## Installation
+
+Install the released module from the PowerShell Gallery:
+
+```powershell
+Install-Module -Name PSSW -Scope CurrentUser
+Import-Module PSSW
+```
+
+To install a specific version, add `-RequiredVersion <version>` to
+`Install-Module`. To update an existing installation, use:
+
+```powershell
+Update-Module -Name PSSW
+```
+
+For development, clone the repository and import the manifest directly:
+
+```powershell
+Import-Module ./PSSW.psd1 -Force
+```
 
 Run the tests with Pester:
 
@@ -42,3 +67,11 @@ values interpreted as seconds. Multiple values are added together, so
 count or `-1` for infinite repetition; `-Mute` suppresses only the audible
 completion alert, while the "Time's up!" message still prints. Press `s` to
 pause/resume or `q` to cancel cleanly.
+
+## Publishing
+
+Publishing is intentionally manual. A maintainer can run the
+`Publish PowerShell Gallery` workflow with a version, tag, and repository
+secret named `PSGALLERY_API_KEY`. The workflow verifies that the tag is
+`v<version>` and that the version matches `PSSW.psd1` before publishing. No
+API key is stored in the repository.

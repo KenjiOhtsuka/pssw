@@ -1,3 +1,24 @@
+<#
+.SYNOPSIS
+    Provides an interactive stopwatch and countdown timer for PowerShell.
+
+.DESCRIPTION
+    PSSW exports commands for measuring elapsed time with a stopwatch and
+    counting down one or more durations with a timer. Both commands update
+    an interactive terminal display and respond to keyboard controls while
+    they are running.
+
+.NOTES
+    The commands require an interactive terminal. Use S to pause or resume
+    either command and Q to quit. The stopwatch also uses L to record a lap
+    while running or print the completed run and reset while paused.
+
+.LINK
+    Start-PSSWStopwatch
+
+.LINK
+    Start-PSSWTimer
+#>
 Set-StrictMode -Version 3.0
 
 function ConvertFrom-PSSWDuration {
@@ -68,6 +89,44 @@ function Format-PSSWTime {
     return '{0:00} h {1:00} m {2} s' -f $hours, $minutes, $formattedSeconds
 }
 
+<#
+.SYNOPSIS
+    Starts an interactive stopwatch.
+
+.DESCRIPTION
+    Starts a stopwatch that displays elapsed time in an interactive terminal.
+    Press S to pause or resume, L to record a lap while running, or Q to
+    quit. While paused, press L to print the completed run and reset the
+    stopwatch. The final elapsed time and recorded laps are printed when the
+    stopwatch quits.
+
+.SYNTAX
+    Start-PSSWStopwatch [[-Precision] <Int32>]
+
+.PARAMETER Precision
+    Specifies the number of fractional-second digits shown in the display.
+    The value must be between 0 and 15. The default is 3.
+
+.EXAMPLE
+    Start-PSSWStopwatch
+
+    Starts a stopwatch with three fractional-second digits.
+
+.EXAMPLE
+    Start-PSSWStopwatch -Precision 0
+
+    Starts a stopwatch that displays whole seconds.
+
+.INPUTS
+    None. You cannot pipe input to this command.
+
+.OUTPUTS
+    None. The stopwatch display and summary are written to the host.
+
+.NOTES
+    This command requires an interactive terminal. Press S to pause or resume,
+    L to record a lap or reset while paused, and Q to quit.
+#>
 function Start-PSSWStopwatch {
     [CmdletBinding()]
     param(
@@ -147,6 +206,63 @@ function Get-PSSWStopwatchElapsed {
     return $Clock.Elapsed.TotalSeconds
 }
 
+<#
+.SYNOPSIS
+    Starts an interactive countdown timer.
+
+.DESCRIPTION
+    Counts down one or more duration values in an interactive terminal. Each
+    duration may use hours (h), minutes (m), or seconds (s); a unitless value
+    is interpreted as seconds. Multiple duration values are added together.
+    Press S to pause or resume, or Q to cancel. When a cycle finishes, the
+    timer displays a completion message and, unless muted, emits an audible
+    notification.
+
+.SYNTAX
+    Start-PSSWTimer [-Duration] <String[]> [[-Precision] <Int32>] [[-Repeat] <Int32>] [-Mute]
+
+.PARAMETER Duration
+    Specifies one or more positive duration values. Values can be written as
+    1h, 30m, or 45s; unitless values are treated as seconds. Multiple values
+    are added together.
+
+.PARAMETER Precision
+    Specifies the number of fractional-second digits shown in the display.
+    The value must be between 0 and 15. The default is 3.
+
+.PARAMETER Repeat
+    Specifies how many timer cycles to run. The default is 1. Use -1 to repeat
+    indefinitely until the user presses Q. The value must be positive or -1.
+
+.PARAMETER Mute
+    Suppresses the audible completion notification. The completion message is
+    still displayed.
+
+.EXAMPLE
+    Start-PSSWTimer -Duration 5m, 30s
+
+    Counts down for five minutes and thirty seconds.
+
+.EXAMPLE
+    Start-PSSWTimer -Duration 1m -Repeat 3
+
+    Runs three one-minute countdown cycles.
+
+.EXAMPLE
+    Start-PSSWTimer -Duration 10s -Repeat -1 -Mute
+
+    Repeats a silent ten-second countdown until the user presses Q.
+
+.INPUTS
+    None. You cannot pipe input to this command.
+
+.OUTPUTS
+    None. The timer display and status messages are written to the host.
+
+.NOTES
+    This command requires an interactive terminal. Press S to pause or resume
+    and Q to cancel the current timer. A duration must be greater than zero.
+#>
 function Start-PSSWTimer {
     [CmdletBinding()]
     param(

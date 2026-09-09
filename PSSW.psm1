@@ -110,7 +110,6 @@ function Start-PSSWStopwatch {
                     $lap = '  Lap #{0:00}: {1}' -f ($laps.Count + 1), (Format-PSSWTime -Seconds $elapsed -Precision $Precision)
                     [void]$laps.Add($lap)
                     Write-Host $lap
-                    Write-Host ''
                 }
                 else {
                     if ($elapsed -gt 0) {
@@ -202,6 +201,7 @@ function Start-PSSWTimer {
                     Start-Sleep -Milliseconds $(if ($Precision -gt 2) { 10 } else { 50 })
                 }
                 Write-PSSWTimeLine -Seconds 0 -Precision $Precision
+                Write-Host ''
                 Invoke-PSSWTimerNotification -Mute:$Mute
                 Write-Host "Time's up!"
             }
